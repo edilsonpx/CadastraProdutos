@@ -1,0 +1,229 @@
+<html>
+
+<head>
+    <title>Portal do Cliente</title>
+    <style>
+        * {
+            font-family: Verdana, Geneva, Tahoma, sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #35352b;
+        }
+
+        .cliente {
+            text-align: center;
+        }
+
+        .cliente img {
+            max-width: 500px;
+            width: 30%;
+        }
+
+        .cliente h2 {
+            color: black;
+            padding: 10px;
+        }
+
+        .cliente textarea {
+
+            width: 30%;
+            height: 40px;
+            padding: 10px;
+        }
+
+        .cliente input {
+            padding: 10px;
+            width: 30%;
+            height: 40px;
+            cursor: pointer;
+        }
+
+        .admin {
+            text-align: center;
+        }
+
+        .admin h2 {
+            color: black;
+            padding: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div style="display: none" class="cliente">
+        <img src="imgs/02.png">
+
+        <h2>Cadastrar Cabo USB 01</h2>
+
+        <form id="form-cliente2">
+            <textarea placeholder="Digite a vaga que procura..." name="comprovante2"></textarea><br>
+            <input type="file" name="arquivo2" /><br>
+            <input type="submit" name="acao2" value="Enviar" />
+            
+        </form>
+    <br>
+
+    <h2>Cadastrar Caixa de som 02</h2>
+    <form id="form-cliente">
+        <textarea placeholder="Digite a vaga que procura..." name="comprovante"></textarea><br>
+        <input type="file" name="arquivo" /><br>
+        <input type="submit" name="acao" value="Enviar" />
+        
+    </form>
+</div>
+    <!--CLIENTE-->
+
+    <div style="display: none" class="admin">
+        <img src="imgs/02.png"><br>
+        <a id="login" href="#"><img src="imgs/img01.png" /></a>
+        <div style="display:none" class="listar-formularios">
+            <h2>Ultimas solicitações:</h2>
+            <div class="container-pedidos">
+
+            </div>
+            <!--CONTAINER-PEDIDOS-->>
+        </div>
+    </div>
+    <!--ADMIN-->
+
+    <script src="https://www.gstatic.com/firebasejs/8.6.3/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.5.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.5.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.5.0/firebase-storage.js"></script>
+
+    <script>
+        var  firebaseConfig = {
+        apiKey: "AIzaSyAlyKAt0Eg57cb8GZDalCaEwIALPWPAEds",
+        authDomain: "painel-loguin.firebaseapp.com",
+        projectId: "painel-loguin",
+        storageBucket: "painel-loguin.appspot.com",
+        messagingSenderId: "24549930727",
+        appId: "1:24549930727:web:98a17c160e55172c4bd442"
+      };
+        firebase.initializeApp(firebaseConfig);
+
+        const storage = firebase.storage();
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+
+        const provider = new firebase.auth.GoogleAuthProvider();
+
+        const formCliente = document.querySelector('#form-cliente');
+        formCliente.addEventListener('submit', (e) => {
+            e.preventDefault();
+            let comprovanteText = document.querySelector('[name=comprovante]').value;
+            let arquivo = document.querySelector('[name=arquivo]').files[0];
+
+            const uploadTask = storage.ref('caixa/' + arquivo.name).put(arquivo);
+
+            uploadTask.on('state_changed', (snapshot) => {
+                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 1;
+                console.log(progress);
+            },
+                function (error) {
+
+                },
+                function () {
+                    storage.ref('caixa/' + arquivo.name).getDownloadURL().then((url) => {
+                        db.collection('caixa').add({
+                            descricao: comprovanteText,
+                            arquivoURL: url
+                        })
+                        alert("Formulário Enviado com sucesso!");
+                    })
+                }
+            )
+        })
+
+
+/***************************************************************************/
+
+        const formCliente2 = document.querySelector('#form-cliente2');
+        formCliente2.addEventListener('submit', (e) => {
+            e.preventDefault();
+            let comprovanteText = document.querySelector('[name=comprovante2]').value;
+            let arquivo = document.querySelector('[name=arquivo2]').files[0];
+
+            const uploadTask0 = storage.ref('documentos/' + arquivo.name).put(arquivo);
+
+            uploadTask0.on('state_changed', (snapshot) => {
+                const progress0 = (snapshot.bytesTransferred / snapshot.totalBytes) * 1;
+                console.log(progress0);
+            },
+                function (error) {
+
+                },
+                function () {
+                    storage.ref('documentos/' + arquivo.name).getDownloadURL().then((url) => {
+                        db.collection('documentos').add({
+                            descricao: comprovanteText,
+                            arquivoURL: url
+                        })
+                        alert("Formulário Enviado com sucesso!");
+                    })
+                }
+            )
+        })
+
+/****************************************************************************/
+
+
+
+        const loginBtn = document.getElementById('login');
+        loginBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            auth.signInWithPopup(provider);
+        })
+
+        //PUXAR PEDIDOS DO FIRESTORE
+        db.collection('documentos').onSnapshot((data) => {
+            let list = document.querySelector('.container-pedidos');
+            list.innerHTML = "";
+            data.docs.map((val) => {
+                list.innerHTML += `
+                    <div style="display:flex; background-color:white; padding:20px;margin-bottom:20px;text-align:left;" class="container-single-pedido">
+                        <p>${val.data().descricao}</p>
+                        <img style="max-width:150px; margin-top:10px;" src ="${val.data().arquivoURL}"
+                    </div>
+                    <hr>
+                `;
+            })
+        })
+
+    </script>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const myParam = urlParams.get('admin');
+
+        if (myParam != null) {
+            //Eu quero entrar na parte administrativa.
+            const adminArea = document.querySelector('.admin');
+            adminArea.style.display = "block";
+            console.log("Área do administrador");
+
+            auth.onAuthStateChanged((val) => {
+                if (val.email == "edilson.aria@gmail.com") {
+                    loginBtn.style.display = "none";
+                    document.querySelector('.listar-formularios').style.display = "block";
+                    alert('Você está logado, admin!');
+                    console.log("Logado como admin.");
+                } else {
+                    alert('Este email não é autorizado!');
+                    console.log("Usuário não logado como admin.");
+                }
+            })
+
+        } else {
+            //Eu sou usuário.
+            const clientArea = document.querySelector('.cliente');
+            clientArea.style.display = "block";
+            console.log("Área do usuário");
+        }
+    </script>
+</body>
+
+</html>
